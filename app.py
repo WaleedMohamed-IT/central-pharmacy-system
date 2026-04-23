@@ -487,11 +487,11 @@ def internal_error(error):
 # RUN APP
 # =========================
 if __name__ == '__main__':
-    # Get debug mode from environment, default to True
     debug_mode = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+    port = int(os.getenv('PORT', 5000))
     
     app.run(
         debug=debug_mode,
-        host='127.0.0.1',
-        port=5000
+        host='0.0.0.0',
+        port=port
     )
