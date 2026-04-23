@@ -1,256 +1,494 @@
-from flask import Flask, request, redirect, session
-from database import get_connection
-import matplotlib.pyplot as plt
-import io, base64
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-from openpyxl import Workbook
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
+import database
+from pharmacy_users_management import users_bp, init_users_db
+from datetime import datetime
+import io
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "pharmacy_secret_key"
 
 # =========================
-# 🔐 LOGIN CHECK
+# CONFIGURATION
 # =========================
-def login_required():
-    return 'user' in session
+app.secret_key = os.getenv('SECRET_KEY', 'pharmacy_secret_key_2024_dev')
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+
 
 # =========================
-# 🔐 LOGIN
+# INIT DATABASE
+# =========================
+database.init_db()
+init_users_db()
+app.register_blueprint(users_bp)
+
+
+# =========================
+# CONTEXT PROCESSORS (للـ Templates)
+# =========================
+@app.context_processor
+def inject_user():
+    """Make user data available in all templates"""
+    return {
+        'current_user': session.get('user'),
+        'current_role': session.get('role')
+    }
+
+
+# =========================
+# HOME PAGE
+# =========================
+@app.route('/')
+def home():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return redirect(url_for('dashboard'))
+
+
+# =========================
+# LOGIN
 # =========================
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    error = ""
-
+    error = None
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
 
-        if username == "admin" and password == "admin":
-            session['user'] = username
-            return redirect('/')
+        if not username or not password:
+            error = "❌ اسم المستخدم وكلمة المرور مطلوبان"
         else:
-            error = "Invalid login"
+            import hashlib
+            conn = database.connect()
+            hashed = hashlib.sha256(password.encode()).hexdigest()
+            user = conn.execute(
+                "SELECT * FROM users WHERE username=? AND password=? AND is_active=1",
+                (username, hashed)
+            ).fetchone()
+            conn.close()
 
-    return f"""
-    <html>
-    <body style="font-family:Arial;text-align:center;padding-top:100px;">
-        <h2>Login</h2>
+            if user:
+                session['user'] = user['username']
+                session['role'] = user['role']
+                session.permanent = True
+                return redirect(url_for('dashboard'))
+            else:
+                error = "❌ اسم المستخدم أو كلمة المرور غير صحيحة"
 
-        <form method="POST">
-            <input name="username" placeholder="Username"><br><br>
-            <input name="password" type="password" placeholder="Password"><br><br>
-            <button>Login</button>
-        </form>
+    return render_template("login.html", error=error)
 
-        <p style="color:red;">{error}</p>
-        <p>admin / admin</p>
-    </body>
-    </html>
-    """
 
 # =========================
-# 🚪 LOGOUT
+# LOGOUT
 # =========================
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect('/login')
+    return redirect(url_for('login'))
+
 
 # =========================
-# 📊 CHART
+# DASHBOARD
 # =========================
-def generate_chart():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT name, stock FROM medicines WHERE stock < 20")
-    data = cursor.fetchall()
-    conn.close()
-
-    names = [r["name"] for r in data]
-    stocks = [r["stock"] for r in data]
-
-    if not names:
-        names = ["No Data"]
-        stocks = [0]
-
-    plt.figure(figsize=(6,3))
-    plt.bar(names, stocks)
-    plt.title("Low Stock Medicines")
-
-    img = io.BytesIO()
-    plt.tight_layout()
-    plt.savefig(img, format='png')
-    plt.close()
-    img.seek(0)
-
-    return base64.b64encode(img.getvalue()).decode()
-
-# =========================
-# 🏠 DASHBOARD
-# =========================
-@app.route('/')
+@app.route('/dashboard')
 def dashboard():
-    if not login_required():
-        return redirect('/login')
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template("dashboard.html")
 
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT COUNT(*) FROM medicines")
-    total = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM medicines WHERE stock < 20")
-    low = cursor.fetchone()[0]
-
-    conn.close()
-
-    chart = generate_chart()
-
-    return f"""
-    <html>
-    <body style="font-family:Arial;background:#f4f6f9;padding:20px;">
-
-        <h1>📊 Pharmacy System</h1>
-
-        <p>Welcome {session['user']} | <a href="/logout">Logout</a></p>
-
-        <h3>Total Medicines: {total}</h3>
-        <h3>Low Stock: {low}</h3>
-
-        <img src="data:image/png;base64,{chart}" width="600">
-
-        <br><br>
-
-        <a href="/medicines_page">Medicines</a> |
-        <a href="/export_pdf">PDF</a> |
-        <a href="/export_excel">Excel</a>
-
-    </body>
-    </html>
-    """
 
 # =========================
-# 💊 MEDICINES
+# PHARMACIES MENU
 # =========================
-@app.route('/medicines_page')
-def medicines_page():
-    if not login_required():
-        return redirect('/login')
+@app.route('/pharmacies')
+def pharmacies():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template("pharmacies.html")
 
-    search = request.args.get("search", "")
 
-    conn = get_connection()
-    cursor = conn.cursor()
+# =========================
+# MEDICINES LIST
+# =========================
+@app.route('/medicines')
+def medicines():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    search = request.args.get('search', '').strip()
+    conn = database.connect()
 
     if search:
-        cursor.execute("SELECT * FROM medicines WHERE name LIKE ?", ('%'+search+'%',))
+        rows = conn.execute(
+            "SELECT * FROM medicines WHERE name LIKE ? ORDER BY id DESC",
+            ('%' + search + '%',)
+        ).fetchall()
     else:
-        cursor.execute("SELECT * FROM medicines")
+        rows = conn.execute(
+            "SELECT * FROM medicines ORDER BY id DESC"
+        ).fetchall()
 
-    data = cursor.fetchall()
+    conn.close()
+    return render_template("medicines.html", medicines=rows, search=search)
+
+
+# =========================
+# ADD MEDICINE
+# =========================
+@app.route('/add', methods=['GET', 'POST'])
+def add():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    if session.get('role') not in ['admin', 'pharmacist']:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name', '').strip()
+            price = request.form.get('price', '').strip()
+            quantity = request.form.get('quantity', '').strip()
+            pharmacy_type = request.form.get('pharmacy_type', '').strip()
+
+            # Validation
+            if not all([name, price, quantity, pharmacy_type]):
+                return render_template("add.html", error="جميع الحقول مطلوبة")
+
+            conn = database.connect()
+            conn.execute(
+                "INSERT INTO medicines (name, price, quantity, pharmacy_type) VALUES (?, ?, ?, ?)",
+                (name, float(price), int(quantity), pharmacy_type)
+            )
+            conn.commit()
+            conn.close()
+
+            return redirect(url_for('medicines'))
+        except ValueError:
+            return render_template("add.html", error="يرجى إدخال أرقام صحيحة")
+
+    return render_template("add.html")
+
+
+# =========================
+# EDIT MEDICINE
+# =========================
+@app.route('/edit/<int:med_id>', methods=['GET', 'POST'])
+def edit(med_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    if session.get('role') not in ['admin', 'pharmacist']:
+        return redirect(url_for('dashboard'))
+
+    conn = database.connect()
+
+    if request.method == 'POST':
+        try:
+            name = request.form.get('name', '').strip()
+            price = request.form.get('price', '').strip()
+            quantity = request.form.get('quantity', '').strip()
+
+            if not all([name, price, quantity]):
+                return render_template("edit.html", error="جميع الحقول مطلوبة")
+
+            conn.execute(
+                "UPDATE medicines SET name=?, price=?, quantity=? WHERE id=?",
+                (name, float(price), int(quantity), med_id)
+            )
+            conn.commit()
+            conn.close()
+            return redirect(url_for('medicines'))
+        except ValueError:
+            conn.close()
+            return render_template("edit.html", error="يرجى إدخال أرقام صحيحة")
+
+    medicine = conn.execute(
+        "SELECT * FROM medicines WHERE id=?", (med_id,)
+    ).fetchone()
     conn.close()
 
-    rows = ""
-    for m in data:
-        rows += f"""
-        <tr>
-            <td>{m['id']}</td>
-            <td>{m['name']}</td>
-            <td>{m['category']}</td>
-            <td>{m['stock']}</td>
-            <td>{m['expiry_date']}</td>
-            <td>{m['price']}</td>
-        </tr>
-        """
+    if not medicine:
+        return redirect(url_for('medicines'))
 
-    return f"""
-    <html>
-    <body style="font-family:Arial;padding:20px;">
+    return render_template("edit.html", medicine=medicine)
 
-        <h2>Medicines</h2>
-
-        <a href="/">Dashboard</a> |
-        <a href="/logout">Logout</a>
-
-        <form>
-            <input name="search" placeholder="Search">
-            <button>Search</button>
-        </form>
-
-        <table border="1" cellpadding="10">
-            <tr>
-                <th>ID</th><th>Name</th><th>Category</th>
-                <th>Stock</th><th>Expiry</th><th>Price</th>
-            </tr>
-            {rows}
-        </table>
-
-    </body>
-    </html>
-    """
 
 # =========================
-# 📄 PDF EXPORT
+# DELETE MEDICINE
 # =========================
-@app.route('/export_pdf')
+@app.route('/delete/<int:med_id>')
+def delete(med_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    if session.get('role') != 'admin':
+        return redirect(url_for('medicines'))
+
+    conn = database.connect()
+    conn.execute("DELETE FROM medicines WHERE id=?", (med_id,))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('medicines'))
+
+
+# =========================
+# DOCTOR ORDER
+# =========================
+@app.route('/doctor-order', methods=['GET', 'POST'])
+def doctor_order():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    if session.get('role') not in ['doctor', 'admin']:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        try:
+            patient_name = request.form.get('patient_name', '').strip()
+            patient_id = request.form.get('patient_id', '').strip()
+            department = request.form.get('department', '').strip()
+            medicine_name = request.form.get('medicine_name', '').strip()
+            dose = request.form.get('dose', '').strip()
+            notes = request.form.get('notes', '').strip()
+            pharmacy_type = request.form.get('pharmacy_type', '').strip()
+
+            if not all([patient_name, patient_id, department, medicine_name, dose, pharmacy_type]):
+                return render_template("doctor_order.html", error="الحقول المطلوبة ناقصة")
+
+            conn = database.connect()
+            conn.execute("""
+                INSERT INTO doctor_orders
+                (patient_name, patient_id, department, medicine_name, dose, notes, pharmacy_type, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')
+            """, (patient_name, patient_id, department, medicine_name, dose, notes, pharmacy_type))
+            conn.commit()
+            conn.close()
+
+            return redirect(url_for('pharmacy_orders'))
+        except Exception as e:
+            return render_template("doctor_order.html", error=f"حدث خطأ: {str(e)}")
+
+    return render_template("doctor_order.html")
+
+
+# =========================
+# PHARMACY ORDERS
+# =========================
+@app.route('/pharmacy-orders')
+def pharmacy_orders():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    search = request.args.get('search', '').strip()
+    conn = database.connect()
+
+    if search:
+        orders = conn.execute("""
+            SELECT * FROM doctor_orders
+            WHERE patient_name LIKE ? OR medicine_name LIKE ?
+            ORDER BY id DESC
+        """, ('%' + search + '%', '%' + search + '%')).fetchall()
+    else:
+        orders = conn.execute(
+            "SELECT * FROM doctor_orders ORDER BY id DESC"
+        ).fetchall()
+
+    pending_count = conn.execute(
+        "SELECT COUNT(*) FROM doctor_orders WHERE status='Pending'"
+    ).fetchone()[0]
+
+    approved_count = conn.execute(
+        "SELECT COUNT(*) FROM doctor_orders WHERE status='Approved'"
+    ).fetchone()[0]
+
+    rejected_count = conn.execute(
+        "SELECT COUNT(*) FROM doctor_orders WHERE status='Rejected'"
+    ).fetchone()[0]
+
+    conn.close()
+
+    return render_template(
+        "pharmacy_orders.html",
+        orders=orders,
+        search=search,
+        pending_count=pending_count,
+        approved_count=approved_count,
+        rejected_count=rejected_count
+    )
+
+
+# =========================
+# APPROVE ORDER
+# =========================
+@app.route('/approve/<int:order_id>')
+def approve(order_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = database.connect()
+    conn.execute("""
+        UPDATE doctor_orders
+        SET status='Approved',
+            pharmacist_name=?,
+            dispense_time=?
+        WHERE id=?
+    """, (session.get('user'), datetime.now().strftime("%Y-%m-%d %H:%M"), order_id))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('pharmacy_orders'))
+
+
+# =========================
+# REJECT ORDER
+# =========================
+@app.route('/reject/<int:order_id>')
+def reject(order_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = database.connect()
+    conn.execute("""
+        UPDATE doctor_orders
+        SET status='Rejected',
+            pharmacist_name=?,
+            dispense_time=?
+        WHERE id=?
+    """, (session.get('user'), datetime.now().strftime("%Y-%m-%d %H:%M"), order_id))
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for('pharmacy_orders'))
+
+
+# =========================
+# EXPORT EXCEL
+# =========================
+@app.route('/export/excel')
+def export_excel():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    import csv
+    conn = database.connect()
+    orders = conn.execute("SELECT * FROM doctor_orders ORDER BY id DESC").fetchall()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        'ID', 'Patient Name', 'Patient ID', 'Department',
+        'Medicine', 'Dose', 'Notes', 'Status',
+        'Pharmacist', 'Dispense Time', 'Pharmacy Type', 'Created At'
+    ])
+
+    for order in orders:
+        writer.writerow(list(order))
+
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode('utf-8-sig')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name='pharmacy_orders.csv'
+    )
+
+
+# =========================
+# EXPORT PDF
+# =========================
+@app.route('/export/pdf')
 def export_pdf():
-    conn = get_connection()
-    cursor = conn.cursor()
+    if 'user' not in session:
+        return redirect(url_for('login'))
 
-    cursor.execute("SELECT * FROM medicines")
-    data = cursor.fetchall()
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    conn = database.connect()
+    orders = conn.execute("SELECT * FROM doctor_orders ORDER BY id DESC").fetchall()
     conn.close()
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer)
-
-    styles = getSampleStyleSheet()
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4))
     elements = []
 
-    elements.append(Paragraph("Pharmacy Report", styles['Title']))
-    elements.append(Spacer(1, 12))
+    styles = getSampleStyleSheet()
+    elements.append(Paragraph("تقرير طلبات الصيدلية", styles['Title']))
+    elements.append(Paragraph(
+        f"تم الإنشاء: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        styles['Normal']
+    ))
+    elements.append(Spacer(1, 20))
 
-    for m in data:
-        text = f"{m['id']} - {m['name']} - {m['stock']} - {m['price']}"
-        elements.append(Paragraph(text, styles['Normal']))
-        elements.append(Spacer(1, 5))
+    data = [[
+        'ID', 'المريض', 'رقم المريض', 'القسم',
+        'الدواء', 'الجرعة', 'الحالة', 'الصيدلي', 'الوقت'
+    ]]
 
+    for order in orders:
+        data.append([
+            str(order['id']),
+            order['patient_name'],
+            order['patient_id'],
+            order['department'],
+            order['medicine_name'],
+            order['dose'],
+            order['status'],
+            order['pharmacist_name'] or '-',
+            order['dispense_time'] or '-'
+        ])
+
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d6efd')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f0f4ff')]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
+    ]))
+
+    elements.append(table)
     doc.build(elements)
+
     buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name='pharmacy_orders.pdf'
+    )
 
-    return buffer.getvalue()
-
-# =========================
-# 📊 EXCEL EXPORT
-# =========================
-@app.route('/export_excel')
-def export_excel():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM medicines")
-    data = cursor.fetchall()
-    conn.close()
-
-    wb = Workbook()
-    ws = wb.active
-
-    ws.append(["ID","Name","Category","Stock","Expiry","Price"])
-
-    for m in data:
-        ws.append([m["id"], m["name"], m["category"], m["stock"], m["expiry_date"], m["price"]])
-
-    file = "report.xlsx"
-    wb.save(file)
-
-    return redirect(file)
 
 # =========================
-# 🚀 RUN (IMPORTANT FOR RENDER)
+# ERROR HANDLERS
+# =========================
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return render_template('500.html'), 500
+
+
+# =========================
+# RUN APP
 # =========================
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    # Get debug mode from environment, default to True
+    debug_mode = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+    
+    app.run(
+        debug=debug_mode,
+        host='127.0.0.1',
+        port=5000
+    )

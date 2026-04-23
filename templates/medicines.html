@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}قائمة الأدوية - نظام إدارة الصيدلية{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">الرئيسية</a></li>
+        <li class="breadcrumb-item active">الأدوية</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="row mb-4 align-items-center">
+    <div class="col-12 col-md-6">
+        <h1 class="display-6 fw-bold">
+            <i class="fas fa-capsules text-primary"></i> قائمة الأدوية
+        </h1>
+        <p class="text-muted">إدارة وتتبع الأدوية المتوفرة في الصيدلية</p>
+    </div>
+    <div class="col-12 col-md-6 text-md-end">
+        {% if session.get('role') in ['admin', 'pharmacist'] %}
+        <a href="{{ url_for('add') }}" class="btn btn-success btn-lg">
+            <i class="fas fa-plus-circle"></i> إضافة دواء جديد
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="d-flex gap-2">
+            <div class="input-group flex-grow-1">
+                <span class="input-group-text bg-light">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="form-control form-control-lg" 
+                    placeholder="ابحث عن دواء باسمه..."
+                    value="{{ search }}"
+                    autocomplete="off">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> بحث
+                </button>
+            </div>
+            {% if search %}
+            <a href="{{ url_for('medicines') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-times"></i> مسح
+            </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Medicines Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fas fa-list"></i> الأدوية المتوفرة
+        </h5>
+        <span class="badge bg-primary rounded-pill">
+            {{ medicines|length }} دواء
+        </span>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 25%;">اسم الدواء</th>
+                    <th style="width: 15%;">السعر</th>
+                    <th style="width: 15%;">الكمية</th>
+                    <th style="width: 20%;">نوع الصيدلية</th>
+                    <th style="width: 20%;">الإجراءات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if medicines %}
+                    {% for med in medicines %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-light text-dark">{{ med.id }}</span>
+                        </td>
+                        <td>
+                            <strong>{{ med.name }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">
+                                {{ med.price }} ج.م
+                            </span>
+                        </td>
+                        <td>
+                            {% if med.quantity > 20 %}
+                                <span class="badge bg-success">{{ med.quantity }} وحدة</span>
+                            {% elif med.quantity > 5 %}
+                                <span class="badge bg-warning">{{ med.quantity }} وحدة</span>
+                            {% else %}
+                                <span class="badge bg-danger">{{ med.quantity }} وحدة</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if med.pharmacy_type == 'تجزئة' %}
+                                <span class="badge bg-primary">تجزئة</span>
+                            {% elif med.pharmacy_type == 'جملة' %}
+                                <span class="badge bg-secondary">جملة</span>
+                            {% else %}
+                                <span class="badge bg-info">{{ med.pharmacy_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                {% if session.get('role') in ['admin', 'pharmacist'] %}
+                                <a href="{{ url_for('edit', med_id=med.id) }}" 
+                                   class="btn btn-sm btn-outline-primary" 
+                                   title="تعديل">
+                                    <i class="fas fa-edit"></i> تعديل
+                                </a>
+                                {% endif %}
+
+                                {% if session.get('role') == 'admin' %}
+                                <form method="GET" action="{{ url_for('delete', med_id=med.id) }}" 
+                                      style="display: inline;">
+                                    <button type="submit" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            title="حذف"
+                                            onclick="return confirm('هل أنت متأكد من حذف هذا الدواء؟');">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i>
+                                <p class="mb-0">
+                                    {% if search %}
+                                        لا توجد أدوية تطابق البحث "{{ search }}"
+                                    {% else %}
+                                        لا توجد أدوية في قاعدة البيانات
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card-footer text-muted">
+        <small>
+            <i class="fas fa-info-circle"></i>
+            إجمالي الأدوية: <strong>{{ medicines|length }}</strong>
+            {% if search %}
+            | نتائج البحث عن: "<strong>{{ search }}</strong>"
+            {% endif %}
+        </small>
+    </div>
+</div>
+
+<!-- Legend -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-book"></i> شرح الألوان
+                </h6>
+                <div class="row g-3">
+                    <div class="col-auto">
+                        <span class="badge bg-success">أكثر من 20 وحدة</span>
+                        <small class="text-muted">- مخزون جيد</small>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-warning">من 5 إلى 20 وحدة</span>
+                        <small class="text-muted">- انتبه</small>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-danger">أقل من 5 وحدات</span>
+                        <small class="text-muted">- مخزون منخفض</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+
+    .btn-group > form {
+        display: inline;
+    }
+
+    h1 {
+        color: #1a1a2e;
+    }
+
+    .input-group-text {
+        border: none;
+    }
+
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+{% endblock %}

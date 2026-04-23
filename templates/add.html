@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة دواء جديد - نظام إدارة الصيدلية{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">الرئيسية</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('medicines') }}">الأدوية</a></li>
+        <li class="breadcrumb-item active">إضافة دواء جديد</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-6 fw-bold">
+            <i class="fas fa-plus-circle text-success"></i> إضافة دواء جديد
+        </h1>
+        <p class="text-muted">أدخل بيانات الدواء الجديد في النموذج أدناه</p>
+    </div>
+</div>
+
+<!-- Form Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-medical"></i> بيانات الدواء
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    
+                    <!-- Medicine Name -->
+                    <div class="mb-4">
+                        <label for="medicineName" class="form-label fw-semibold">
+                            اسم الدواء <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-pills text-primary"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="medicineName"
+                                name="name" 
+                                class="form-control form-control-lg" 
+                                placeholder="مثال: أسبرين 500mg"
+                                required>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> اكتب اسم الدواء بشكل واضح ومحدد
+                        </small>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="mb-4">
+                        <label for="medicinePrice" class="form-label fw-semibold">
+                            السعر (جنيه مصري) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-dollar-sign text-success"></i>
+                            </span>
+                            <input 
+                                type="number" 
+                                id="medicinePrice"
+                                name="price" 
+                                class="form-control form-control-lg" 
+                                placeholder="السعر"
+                                step="0.01"
+                                min="0"
+                                required>
+                            <span class="input-group-text bg-light">ج.م</span>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> أدخل السعر رقمياً (مثال: 50.50)
+                        </small>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-4">
+                        <label for="medicineQuantity" class="form-label fw-semibold">
+                            الكمية (عدد الوحدات) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-boxes text-info"></i>
+                            </span>
+                            <input 
+                                type="number" 
+                                id="medicineQuantity"
+                                name="quantity" 
+                                class="form-control form-control-lg" 
+                                placeholder="عدد الوحدات"
+                                min="0"
+                                required>
+                            <span class="input-group-text bg-light">وحدة</span>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> أدخل الكمية المتوفرة حالياً
+                        </small>
+                    </div>
+
+                    <!-- Pharmacy Type -->
+                    <div class="mb-4">
+                        <label for="pharmacyType" class="form-label fw-semibold">
+                            نوع الصيدلية <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-store text-warning"></i>
+                            </span>
+                            <select 
+                                id="pharmacyType"
+                                name="pharmacy_type" 
+                                class="form-select form-select-lg" 
+                                required>
+                                <option value="">-- اختر نوع الصيدلية --</option>
+                                <option value="تجزئة">تجزئة (Retail)</option>
+                                <option value="جملة">جملة (Wholesale)</option>
+                                <option value="مستشفى">مستشفى (Hospital)</option>
+                                <option value="عيادة">عيادة (Clinic)</option>
+                            </select>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> حدد النوع حسب تصنيف الصيدلية
+                        </small>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mt-5">
+                        <a href="{{ url_for('medicines') }}" class="btn btn-outline-secondary btn-lg px-5">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-5">
+                            <i class="fas fa-save"></i> إضافة الدواء
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card mt-4 bg-light">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-lightbulb text-warning"></i> نصائح مهمة
+                </h6>
+                <ul class="mb-0">
+                    <li><strong>اسم الدواء:</strong> كن دقيقاً في تسمية الدواء والجرعة</li>
+                    <li><strong>السعر:</strong> أدخل السعر بالجنيه المصري</li>
+                    <li><strong>الكمية:</strong> تابع الكمية بانتظام وحدثها</li>
+                    <li><strong>النوع:</strong> اختر التصنيف الصحيح للصيدلية</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    h1 {
+        color: #1a1a2e;
+    }
+
+    .form-label {
+        color: #333;
+    }
+
+    .input-group-text {
+        border: 1px solid #dee2e6;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form Validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+</script>
+{% endblock %}

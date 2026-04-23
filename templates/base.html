@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}نظام إدارة الصيدلية{% endblock %}</title>
+    
+    <!-- Bootstrap 5 RTL CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #1a1a2e;
+            --secondary-color: #16213e;
+            --accent-color: #0d6efd;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+        }
+
+        * {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8;
+            padding-top: 70px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        /* ==================== NAVBAR STYLING ==================== */
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            border-bottom: 3px solid var(--accent-color);
+            padding: 0.8rem 0;
+        }
+
+        .navbar-brand {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #fff !important;
+            letter-spacing: 0.5px;
+        }
+
+        .navbar-brand i {
+            margin-left: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 0 0.25rem;
+        }
+
+        .nav-link:hover {
+            color: #fff !important;
+            background-color: rgba(13, 110, 253, 0.2);
+        }
+
+        .nav-link.active {
+            color: #fff !important;
+            background-color: var(--accent-color);
+            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.4);
+        }
+
+        .navbar-divider {
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
+            height: 25px;
+            margin: 0 0.5rem;
+        }
+
+        /* User Dropdown */
+        .user-menu {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .user-menu:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-color);
+        }
+
+        .user-menu .dropdown-toggle::after {
+            margin-right: 0.5rem;
+        }
+
+        .dropdown-menu {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: 1px solid var(--accent-color);
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown-item {
+            color: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 0.25rem 0.5rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--accent-color);
+            color: #fff;
+        }
+
+        .dropdown-divider {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* ==================== BREADCRUMB ==================== */
+        .breadcrumb {
+            background-color: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+            padding: 0.8rem 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .breadcrumb-item.active {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        /* ==================== ALERTS ==================== */
+        .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background-color: rgba(25, 135, 84, 0.1);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-danger {
+            background-color: rgba(220, 53, 69, 0.1);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .alert-warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-info {
+            background-color: rgba(13, 110, 253, 0.1);
+            border-left: 4px solid var(--accent-color);
+        }
+
+        /* ==================== CARDS ==================== */
+        .card {
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: #fff;
+            border-radius: 14px 14px 0 0;
+            border: none;
+        }
+
+        /* ==================== BUTTONS ==================== */
+        .btn {
+            border-radius: 10px;
+            font-weight: 500;
+            padding: 0.6rem 1.2rem;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        /* ==================== FOOTER ==================== */
+        footer {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: rgba(255, 255, 255, 0.8);
+            padding: 2rem 0;
+            margin-top: 3rem;
+            border-top: 2px solid var(--accent-color);
+        }
+
+        footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        footer a:hover {
+            color: #fff;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 768px) {
+            body {
+                padding-top: 60px;
+            }
+
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+
+            .nav-link {
+                padding: 0.5rem 0.8rem !important;
+            }
+
+            .navbar-divider {
+                display: none;
+            }
+
+            .user-menu {
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-pills"></i> نظام الصيدلية
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+                           href="{{ url_for('dashboard') }}">
+                            <i class="fas fa-home"></i> الرئيسية
+                        </a>
+                    </li>
+
+                    <!-- Medicines Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['medicines', 'add', 'edit'] %}active{% endif %}"
+                           href="#" id="medicinesDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-capsules"></i> الأدوية
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="medicinesDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('medicines') }}">
+                                <i class="fas fa-list"></i> قائمة الأدوية
+                            </a></li>
+                            {% if session.get('role') in ['admin', 'pharmacist'] %}
+                            <li><a class="dropdown-item" href="{{ url_for('add') }}">
+                                <i class="fas fa-plus-circle"></i> إضافة دواء
+                            </a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+
+                    <!-- Orders Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['doctor_order', 'pharmacy_orders'] %}active{% endif %}"
+                           href="#" id="ordersDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-clipboard-list"></i> الطلبات
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="ordersDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('pharmacy_orders') }}">
+                                <i class="fas fa-prescription-bottle"></i> طلبات الصيدلية
+                            </a></li>
+                            {% if session.get('role') in ['doctor', 'admin'] %}
+                            <li><a class="dropdown-item" href="{{ url_for('doctor_order') }}">
+                                <i class="fas fa-plus-circle"></i> إضافة طلب
+                            </a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+
+                    <!-- Export Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="exportDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-download"></i> التقارير
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li><a class="dropdown-item" href="{{ url_for('export_excel') }}">
+                                <i class="fas fa-file-excel"></i> تحميل Excel
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('export_pdf') }}">
+                                <i class="fas fa-file-pdf"></i> تحميل PDF
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Users Management (Admin Only) -->
+                    {% if session.get('role') == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ['users.user_list', 'users.add_user', 'users.edit_user'] %}active{% endif %}"
+                           href="{{ url_for('users.user_list') }}">
+                            <i class="fas fa-users-cog"></i> المستخدمون
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <!-- User Menu on Right (RTL) -->
+                <div class="d-flex align-items-center">
+                    <div class="navbar-divider"></div>
+                    <div class="dropdown user-menu">
+                        <button class="btn btn-sm dropdown-toggle text-white" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i>
+                            <span class="ms-1">{{ session.get('user', 'Guest') }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <span class="dropdown-item-text" style="font-weight: 600;">
+                                    <i class="fas fa-badge-check"></i> {{ session.get('user', 'N/A') }}
+                                </span>
+                            </li>
+                            <li>
+                                <span class="dropdown-item-text text-muted">
+                                    {% if session.get('role') == 'admin' %}
+                                    <i class="fas fa-crown"></i> مسؤول النظام
+                                    {% elif session.get('role') == 'pharmacist' %}
+                                    <i class="fas fa-prescription"></i> صيدلي
+                                    {% elif session.get('role') == 'doctor' %}
+                                    <i class="fas fa-stethoscope"></i> طبيب
+                                    {% endif %}
+                                </span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <main class="container-fluid py-4 px-3 px-md-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'danger' else 'warning' if category == 'warning' else 'info' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Breadcrumb -->
+        {% block breadcrumb %}{% endblock %}
+
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="mt-5">
+        <div class="container-fluid py-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">
+                        <strong>نظام إدارة الصيدلية</strong> © 2024
+                    </p>
+                    <small>جميع الحقوق محفوظة</small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small>
+                        <i class="fas fa-clock"></i> 
+                        <span id="current-time"></span>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Update Current Time -->
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ar-EG');
+            document.getElementById('current-time').textContent = timeString;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

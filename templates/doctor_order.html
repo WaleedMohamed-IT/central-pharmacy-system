@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}إضافة طلب دواء - نظام إدارة الصيدلية{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">الرئيسية</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('pharmacy_orders') }}">الطلبات</a></li>
+        <li class="breadcrumb-item active">إضافة طلب جديد</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-6 fw-bold">
+            <i class="fas fa-plus-circle text-warning"></i> إضافة طلب دواء جديد
+        </h1>
+        <p class="text-muted">أدخل بيانات الطلب والمريض والدواء المطلوب</p>
+    </div>
+</div>
+
+<!-- Form Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-prescription-bottle"></i> بيانات الطلب
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+
+                    <!-- Patient Name -->
+                    <div class="mb-4">
+                        <label for="patientName" class="form-label fw-semibold">
+                            اسم المريض <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-user text-primary"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="patientName"
+                                name="patient_name" 
+                                class="form-control form-control-lg" 
+                                placeholder="أكمل اسم المريض"
+                                required>
+                        </div>
+                    </div>
+
+                    <!-- Patient ID -->
+                    <div class="mb-4">
+                        <label for="patientId" class="form-label fw-semibold">
+                            رقم المريض / البطاقة <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-id-card text-info"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="patientId"
+                                name="patient_id" 
+                                class="form-control form-control-lg" 
+                                placeholder="مثال: 1234567890"
+                                required>
+                        </div>
+                    </div>
+
+                    <!-- Department -->
+                    <div class="mb-4">
+                        <label for="department" class="form-label fw-semibold">
+                            قسم المستشفى / العيادة <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-hospital text-danger"></i>
+                            </span>
+                            <select 
+                                id="department"
+                                name="department" 
+                                class="form-select form-select-lg" 
+                                required>
+                                <option value="">-- اختر القسم --</option>
+                                <option value="الطوارئ">الطوارئ (Emergency)</option>
+                                <option value="العناية المركزة">العناية المركزة (ICU)</option>
+                                <option value="الجراحة">الجراحة (Surgery)</option>
+                                <option value="الباطنية">الباطنية (Internal Medicine)</option>
+                                <option value="أمراض النساء">أمراض النساء (OB/GYN)</option>
+                                <option value="الأطفال">الأطفال (Pediatrics)</option>
+                                <option value="القلب">أمراض القلب (Cardiology)</option>
+                                <option value="الأنف والأذن">الأنف والأذن والحنجرة (ENT)</option>
+                                <option value="الجلدية">الجلدية (Dermatology)</option>
+                                <option value="أخرى">أخرى</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Medicine Name -->
+                    <div class="mb-4">
+                        <label for="medicineName" class="form-label fw-semibold">
+                            اسم الدواء المطلوب <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-pills text-success"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="medicineName"
+                                name="medicine_name" 
+                                class="form-control form-control-lg" 
+                                placeholder="اسم الدواء"
+                                required>
+                        </div>
+                    </div>
+
+                    <!-- Dose -->
+                    <div class="mb-4">
+                        <label for="dose" class="form-label fw-semibold">
+                            الجرعة <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-capsules text-info"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="dose"
+                                name="dose" 
+                                class="form-control form-control-lg" 
+                                placeholder="مثال: قرص واحد 3 مرات يومياً"
+                                required>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-info-circle"></i> اكتب الجرعة والطريقة والمدة (مثال: قرص واحد 3 مرات يومياً لمدة 7 أيام)
+                        </small>
+                    </div>
+
+                    <!-- Pharmacy Type -->
+                    <div class="mb-4">
+                        <label for="pharmacyType" class="form-label fw-semibold">
+                            نوع الصيدلية <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-store text-warning"></i>
+                            </span>
+                            <select 
+                                id="pharmacyType"
+                                name="pharmacy_type" 
+                                class="form-select form-select-lg" 
+                                required>
+                                <option value="">-- اختر نوع الصيدلية --</option>
+                                <option value="تجزئة">تجزئة (Retail)</option>
+                                <option value="جملة">جملة (Wholesale)</option>
+                                <option value="مستشفى">مستشفى (Hospital)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label fw-semibold">
+                            ملاحظات إضافية (اختياري)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light align-self-start mt-2">
+                                <i class="fas fa-sticky-note text-secondary"></i>
+                            </span>
+                            <textarea 
+                                id="notes"
+                                name="notes" 
+                                class="form-control form-control-lg" 
+                                placeholder="أي ملاحظات إضافية أو تحذيرات طبية..."
+                                rows="3"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mt-5">
+                        <a href="{{ url_for('pharmacy_orders') }}" class="btn btn-outline-secondary btn-lg px-5">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-warning btn-lg px-5">
+                            <i class="fas fa-paper-plane"></i> إرسال الطلب
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card mt-4 bg-light">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-lightbulb text-warning"></i> نصائح مهمة
+                </h6>
+                <ul class="mb-0">
+                    <li><strong>اسم المريض:</strong> تأكد من كتابة الاسم بشكل صحيح</li>
+                    <li><strong>رقم المريض:</strong> أدخل رقم البطاقة أو الملف الطبي</li>
+                    <li><strong>القسم:</strong> اختر القسم الذي يعالج فيه المريض</li>
+                    <li><strong>اسم الدواء:</strong> كن دقيقاً في التسمية والجرعة</li>
+                    <li><strong>الملاحظات:</strong> أضف أي تحذيرات أو معلومات مهمة</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    h1 {
+        color: #1a1a2e;
+    }
+
+    .form-label {
+        color: #333;
+    }
+
+    .input-group-text {
+        border: 1px solid #dee2e6;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form Validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add New Order</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f5f6fa;
+        }
+
+        .form-box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+
+<body class="container mt-5">
+
+    <div class="form-box">
+        <h2 class="mb-4">➕ Add New Medication Order</h2>
+
+        <form method="POST">
+
+            <div class="mb-3">
+                <label class="form-label">Patient Name</label>
+                <input type="text" name="patient" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Medicine Name</label>
+                <input type="text" name="medicine" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Dose</label>
+                <input type="text" name="dose" class="form-control" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Department</label>
+                <input type="text" name="department" class="form-control" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Save Order
+            </button>
+
+            <a href="/pharmacy-orders" class="btn btn-secondary">
+                Back
+            </a>
+
+        </form>
+    </div>
+
+</body>
+</html>

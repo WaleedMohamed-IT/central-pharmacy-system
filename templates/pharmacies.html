@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 class="mb-4 text-center">🏥 Hospital Sub Pharmacies</h2>
+
+<div class="text-center mb-4">
+    <h4 style="font-weight: bold;">💊 Pharmacies Menu</h4>
+</div>
+
+<div class="row d-flex align-items-stretch">
+
+    <!-- Government Pharmacy -->
+    <div class="col-md-6 mb-3">
+        <a href="/doctor-order" class="text-decoration-none">
+            <div class="card p-4 text-center equal-height">
+                💊 Government Pharmacy
+            </div>
+        </a>
+    </div>
+
+    <!-- Internal Department Pharmacy -->
+    <div class="col-md-6 mb-3">
+        <a href="/doctor-order" class="text-decoration-none">
+            <div class="card p-4 text-center equal-height">
+                💊 Internal Department Pharmacy
+            </div>
+        </a>
+    </div>
+
+    <!-- ICU Pharmacy -->
+    <div class="col-md-6 mb-3">
+        <a href="/doctor-order" class="text-decoration-none">
+            <div class="card p-4 text-center equal-height">
+                💊 ICU Pharmacy
+            </div>
+        </a>
+    </div>
+
+    <!-- Outpatient Pharmacy -->
+    <div class="col-md-6 mb-3">
+        <a href="/doctor-order" class="text-decoration-none">
+            <div class="card p-4 text-center equal-height">
+                💊 Outpatient Pharmacy
+            </div>
+        </a>
+    </div>
+
+</div>
+
+<style>
+    .equal-height {
+        height: 100%;
+        font-weight: bold;
+    }
+</style>
+
+{% endblock %}

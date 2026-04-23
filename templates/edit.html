@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}تعديل دواء - نظام إدارة الصيدلية{% endblock %}
+
+{% block content %}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">الرئيسية</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('medicines') }}">الأدوية</a></li>
+        <li class="breadcrumb-item active">تعديل دواء</li>
+    </ol>
+</nav>
+
+<!-- Page Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-6 fw-bold">
+            <i class="fas fa-edit text-primary"></i> تعديل بيانات الدواء
+        </h1>
+        <p class="text-muted">حدّث معلومات الدواء في النموذج أدناه</p>
+    </div>
+</div>
+
+<!-- Form Card -->
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-medical"></i> 
+                    معلومات الدواء: <strong>{{ medicine.name }}</strong>
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate>
+                    
+                    <!-- Medicine Name -->
+                    <div class="mb-4">
+                        <label for="medicineName" class="form-label fw-semibold">
+                            اسم الدواء <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-pills text-primary"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="medicineName"
+                                name="name" 
+                                class="form-control form-control-lg" 
+                                value="{{ medicine.name }}"
+                                required>
+                        </div>
+                    </div>
+
+                    <!-- Price -->
+                    <div class="mb-4">
+                        <label for="medicinePrice" class="form-label fw-semibold">
+                            السعر (جنيه مصري) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-dollar-sign text-success"></i>
+                            </span>
+                            <input 
+                                type="number" 
+                                id="medicinePrice"
+                                name="price" 
+                                class="form-control form-control-lg" 
+                                value="{{ medicine.price }}"
+                                step="0.01"
+                                min="0"
+                                required>
+                            <span class="input-group-text bg-light">ج.م</span>
+                        </div>
+                    </div>
+
+                    <!-- Quantity -->
+                    <div class="mb-4">
+                        <label for="medicineQuantity" class="form-label fw-semibold">
+                            الكمية (عدد الوحدات) <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-boxes text-info"></i>
+                            </span>
+                            <input 
+                                type="number" 
+                                id="medicineQuantity"
+                                name="quantity" 
+                                class="form-control form-control-lg" 
+                                value="{{ medicine.quantity }}"
+                                min="0"
+                                required>
+                            <span class="input-group-text bg-light">وحدة</span>
+                        </div>
+                    </div>
+
+                    <!-- Pharmacy Type (Read-Only) -->
+                    <div class="mb-4">
+                        <label for="pharmacyType" class="form-label fw-semibold">
+                            نوع الصيدلية
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">
+                                <i class="fas fa-store text-warning"></i>
+                            </span>
+                            <input 
+                                type="text" 
+                                id="pharmacyType"
+                                class="form-control form-control-lg" 
+                                value="{{ medicine.pharmacy_type }}"
+                                disabled>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-lock"></i> لا يمكن تغيير نوع الصيدلية
+                        </small>
+                    </div>
+
+                    <!-- Medicine ID Info -->
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>رقم الدواء:</strong> {{ medicine.id }}
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="d-grid gap-2 d-sm-flex justify-content-sm-end mt-5">
+                        <a href="{{ url_for('medicines') }}" class="btn btn-outline-secondary btn-lg px-5">
+                            <i class="fas fa-times"></i> إلغاء
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg px-5">
+                            <i class="fas fa-save"></i> حفظ التعديلات
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="card mt-4 bg-light">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-info-circle text-info"></i> معلومات إضافية
+                </h6>
+                <ul class="mb-0">
+                    <li><strong>آخر تحديث:</strong> اليوم</li>
+                    <li><strong>الحالة:</strong> نشط وجاهز للاستخدام</li>
+                    <li><strong>التصنيف:</strong> صنف رئيسي</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    h1 {
+        color: #1a1a2e;
+    }
+
+    .form-label {
+        color: #333;
+    }
+
+    .input-group-text {
+        border: 1px solid #dee2e6;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .form-control:disabled {
+        background-color: #e9ecef;
+        color: #6c757d;
+    }
+
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn {
+        font-weight: 600;
+    }
+
+    .alert {
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form Validation
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+</script>
+{% endblock %}
