@@ -422,6 +422,23 @@ def export_excel():
 # =========================
 # EXPORT PDF
 # =========================
+# =========================
+# NOTIFICATIONS
+# =========================
+@app.route('/check-new-orders')
+def check_new_orders():
+    """تحقق من طلبات جديدة للصيدلي"""
+    if 'user' not in session or session.get('role') != 'pharmacist':
+        return {'count': 0}
+    
+    conn = database.connect()
+    # عد الطلبات المعلقة
+    pending = conn.execute(
+        "SELECT COUNT(*) FROM doctor_orders WHERE status='Pending'"
+    ).fetchone()[0]
+    conn.close()
+    
+    return {'count': pending}
 @app.route('/export/pdf')
 def export_pdf():
     if 'user' not in session:
