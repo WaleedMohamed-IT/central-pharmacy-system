@@ -338,7 +338,15 @@
                             </a></li>
                         </ul>
                     </li>
-
+<!-- Suppliers Dropdown (Admin & Pharmacist) -->
+{% if session.get('role') in ['admin', 'pharmacist'] %}
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'suppliers' %}active{% endif %}"
+       href="{{ url_for('suppliers') }}">
+        <i class="fas fa-truck"></i> الموردين
+    </a>
+</li>
+{% endif %}
                     <!-- Users Management (Admin Only) -->
                     {% if session.get('role') == 'admin' %}
                     <li class="nav-item">
@@ -413,7 +421,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <p class="mb-0">
-                        <strong>نظام إدارة الصيدلية</strong> © 2024
+                        <strong>نظام إدارة الصيدلية</strong> ©2026 - Eng:Waleed
                     </p>
                     <small>جميع الحقوق محفوظة</small>
                 </div>

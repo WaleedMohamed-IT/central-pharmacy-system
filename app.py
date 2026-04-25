@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, send_file
 import database
 from pharmacy_users_management import users_bp, init_users_db
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import os
+import csv
+import hashlib
 
 # Try to load dotenv, but don't fail if it's not available
 try:
@@ -18,10 +20,9 @@ app = Flask(__name__)
 # CONFIGURATION
 # =========================
 app.secret_key = os.getenv('SECRET_KEY', 'pharmacy_secret_key_2024_dev')
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_SECURE'] = False
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
-
+app.config['PERMANENT_SESSION_LIFETIME'] = 3600
 
 # =========================
 # INIT DATABASE
@@ -30,21 +31,15 @@ database.init_db()
 init_users_db()
 app.register_blueprint(users_bp)
 
-
-# =========================
-# CONTEXT PROCESSORS (للـ Templates)
-# =========================
 # =========================
 # PERMISSION CHECKER
 # =========================
 def check_permission(allowed_roles):
-    """تحقق من صلاحيات المستخدم"""
     if 'role' not in session or session.get('role') not in allowed_roles:
         return False
     return True
 
 def require_roles(*roles):
-    """Decorator للحماية"""
     def decorator(f):
         def decorated_function(*args, **kwargs):
             if not check_permission(roles):
@@ -52,15 +47,17 @@ def require_roles(*roles):
             return f(*args, **kwargs)
         decorated_function.__name__ = f.__name__
         return decorated_function
-    return decorated_function
+    return decorator
+
+# =========================
+# CONTEXT PROCESSORS
+# =========================
 @app.context_processor
 def inject_user():
-    """Make user data available in all templates"""
     return {
         'current_user': session.get('user'),
         'current_role': session.get('role')
     }
-
 
 # =========================
 # HOME PAGE
@@ -70,7 +67,6 @@ def home():
     if 'user' not in session:
         return redirect(url_for('login'))
     return redirect(url_for('dashboard'))
-
 
 # =========================
 # LOGIN
@@ -85,7 +81,6 @@ def login():
         if not username or not password:
             error = "❌ اسم المستخدم وكلمة المرور مطلوبان"
         else:
-            import hashlib
             conn = database.connect()
             hashed = hashlib.sha256(password.encode()).hexdigest()
             user = conn.execute(
@@ -104,7 +99,6 @@ def login():
 
     return render_template("login.html", error=error)
 
-
 # =========================
 # LOGOUT
 # =========================
@@ -112,7 +106,6 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
 
 # =========================
 # DASHBOARD
@@ -123,7 +116,6 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template("dashboard.html")
 
-
 # =========================
 # PHARMACIES MENU
 # =========================
@@ -132,7 +124,6 @@ def pharmacies():
     if 'user' not in session:
         return redirect(url_for('login'))
     return render_template("pharmacies.html")
-
 
 # =========================
 # MEDICINES LIST
@@ -151,24 +142,17 @@ def medicines():
             ('%' + search + '%',)
         ).fetchall()
     else:
-        rows = conn.execute(
-            "SELECT * FROM medicines ORDER BY id DESC"
-        ).fetchall()
+        rows = conn.execute("SELECT * FROM medicines ORDER BY id DESC").fetchall()
 
     conn.close()
     return render_template("medicines.html", medicines=rows, search=search)
-
 
 # =========================
 # ADD MEDICINE
 # =========================
 @app.route('/add', methods=['GET', 'POST'])
+@require_roles('admin', 'pharmacist')
 def add():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    if session.get('role') not in ['admin', 'pharmacist']:
-        return redirect(url_for('dashboard'))
-
     if request.method == 'POST':
         try:
             name = request.form.get('name', '').strip()
@@ -176,7 +160,6 @@ def add():
             quantity = request.form.get('quantity', '').strip()
             pharmacy_type = request.form.get('pharmacy_type', '').strip()
 
-            # Validation
             if not all([name, price, quantity, pharmacy_type]):
                 return render_template("add.html", error="جميع الحقول مطلوبة")
 
@@ -187,24 +170,18 @@ def add():
             )
             conn.commit()
             conn.close()
-
             return redirect(url_for('medicines'))
         except ValueError:
             return render_template("add.html", error="يرجى إدخال أرقام صحيحة")
 
     return render_template("add.html")
 
-
 # =========================
 # EDIT MEDICINE
 # =========================
 @app.route('/edit/<int:med_id>', methods=['GET', 'POST'])
+@require_roles('admin', 'pharmacist')
 def edit(med_id):
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    if session.get('role') not in ['admin', 'pharmacist']:
-        return redirect(url_for('dashboard'))
-
     conn = database.connect()
 
     if request.method == 'POST':
@@ -227,9 +204,7 @@ def edit(med_id):
             conn.close()
             return render_template("edit.html", error="يرجى إدخال أرقام صحيحة")
 
-    medicine = conn.execute(
-        "SELECT * FROM medicines WHERE id=?", (med_id,)
-    ).fetchone()
+    medicine = conn.execute("SELECT * FROM medicines WHERE id=?", (med_id,)).fetchone()
     conn.close()
 
     if not medicine:
@@ -237,36 +212,24 @@ def edit(med_id):
 
     return render_template("edit.html", medicine=medicine)
 
-
 # =========================
 # DELETE MEDICINE
 # =========================
 @app.route('/delete/<int:med_id>')
+@require_roles('admin')
 def delete(med_id):
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    if session.get('role') != 'admin':
-        return redirect(url_for('medicines'))
-
     conn = database.connect()
     conn.execute("DELETE FROM medicines WHERE id=?", (med_id,))
     conn.commit()
     conn.close()
-
     return redirect(url_for('medicines'))
-
 
 # =========================
 # DOCTOR ORDER
 # =========================
 @app.route('/doctor-order', methods=['GET', 'POST'])
+@require_roles('doctor', 'admin')
 def doctor_order():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-    
-    if session.get('role') not in ['doctor', 'admin']:
-        return redirect(url_for('dashboard'))
-
     if request.method == 'POST':
         try:
             patient_name = request.form.get('patient_name', '').strip()
@@ -288,13 +251,11 @@ def doctor_order():
             """, (patient_name, patient_id, department, medicine_name, dose, notes, pharmacy_type))
             conn.commit()
             conn.close()
-
             return redirect(url_for('pharmacy_orders'))
         except Exception as e:
             return render_template("doctor_order.html", error=f"حدث خطأ: {str(e)}")
 
     return render_template("doctor_order.html")
-
 
 # =========================
 # PHARMACY ORDERS
@@ -314,9 +275,7 @@ def pharmacy_orders():
             ORDER BY id DESC
         """, ('%' + search + '%', '%' + search + '%')).fetchall()
     else:
-        orders = conn.execute(
-            "SELECT * FROM doctor_orders ORDER BY id DESC"
-        ).fetchall()
+        orders = conn.execute("SELECT * FROM doctor_orders ORDER BY id DESC").fetchall()
 
     pending_count = conn.execute(
         "SELECT COUNT(*) FROM doctor_orders WHERE status='Pending'"
@@ -341,7 +300,6 @@ def pharmacy_orders():
         rejected_count=rejected_count
     )
 
-
 # =========================
 # APPROVE ORDER
 # =========================
@@ -360,9 +318,7 @@ def approve(order_id):
     """, (session.get('user'), datetime.now().strftime("%Y-%m-%d %H:%M"), order_id))
     conn.commit()
     conn.close()
-
     return redirect(url_for('pharmacy_orders'))
-
 
 # =========================
 # REJECT ORDER
@@ -382,19 +338,14 @@ def reject(order_id):
     """, (session.get('user'), datetime.now().strftime("%Y-%m-%d %H:%M"), order_id))
     conn.commit()
     conn.close()
-
     return redirect(url_for('pharmacy_orders'))
-
 
 # =========================
 # EXPORT EXCEL
 # =========================
 @app.route('/export/excel')
+@require_roles('admin', 'pharmacist')
 def export_excel():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-
-    import csv
     conn = database.connect()
     orders = conn.execute("SELECT * FROM doctor_orders ORDER BY id DESC").fetchall()
     conn.close()
@@ -418,32 +369,12 @@ def export_excel():
         download_name='pharmacy_orders.csv'
     )
 
-
 # =========================
 # EXPORT PDF
 # =========================
-# =========================
-# NOTIFICATIONS
-# =========================
-@app.route('/check-new-orders')
-def check_new_orders():
-    """تحقق من طلبات جديدة للصيدلي"""
-    if 'user' not in session or session.get('role') != 'pharmacist':
-        return {'count': 0}
-    
-    conn = database.connect()
-    # عد الطلبات المعلقة
-    pending = conn.execute(
-        "SELECT COUNT(*) FROM doctor_orders WHERE status='Pending'"
-    ).fetchone()[0]
-    conn.close()
-    
-    return {'count': pending}
 @app.route('/export/pdf')
+@require_roles('admin', 'pharmacist')
 def export_pdf():
-    if 'user' not in session:
-        return redirect(url_for('login'))
-
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
     from reportlab.lib import colors
@@ -506,6 +437,126 @@ def export_pdf():
         download_name='pharmacy_orders.pdf'
     )
 
+# =========================
+# NOTIFICATIONS
+# =========================
+@app.route('/check-new-orders')
+def check_new_orders():
+    if 'user' not in session or session.get('role') != 'pharmacist':
+        return {'count': 0}
+    
+    conn = database.connect()
+    pending = conn.execute(
+        "SELECT COUNT(*) FROM doctor_orders WHERE status='Pending'"
+    ).fetchone()[0]
+    conn.close()
+    
+    return {'count': pending}
+
+# =========================
+# SUPPLIERS (الموردين)
+# =========================
+@app.route('/suppliers')
+def suppliers():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    search = request.args.get('search', '').strip()
+    conn = database.connect()
+    
+    if search:
+        rows = conn.execute("""
+            SELECT * FROM suppliers 
+            WHERE company_name LIKE ? OR drug_name LIKE ?
+            ORDER BY id DESC
+        """, ('%' + search + '%', '%' + search + '%')).fetchall()
+    else:
+        rows = conn.execute("SELECT * FROM suppliers ORDER BY id DESC").fetchall()
+    
+    conn.close()
+    return render_template("suppliers.html", suppliers=rows, search=search, now=datetime.now(), timedelta=timedelta)
+
+@app.route('/add-supplier', methods=['GET', 'POST'])
+@require_roles('admin', 'pharmacist')
+def add_supplier():
+    if request.method == 'POST':
+        try:
+            company_name = request.form.get('company_name', '').strip()
+            drug_name = request.form.get('drug_name', '').strip()
+            batch_number = request.form.get('batch_number', '').strip()
+            supply_date = request.form.get('supply_date', '').strip()
+            expiry_date = request.form.get('expiry_date', '').strip()
+            price = request.form.get('price', '').strip()
+            quantity = request.form.get('quantity', '').strip()
+            
+            if not all([company_name, drug_name, batch_number, supply_date, expiry_date, price, quantity]):
+                return render_template("add_supplier.html", error="جميع الحقول مطلوبة")
+            
+            conn = database.connect()
+            conn.execute("""
+                INSERT INTO suppliers 
+                (company_name, drug_name, batch_number, supply_date, expiry_date, price, quantity)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (company_name, drug_name, batch_number, supply_date, expiry_date, float(price), int(quantity)))
+            conn.commit()
+            conn.close()
+            
+            return redirect(url_for('suppliers'))
+        except ValueError:
+            return render_template("add_supplier.html", error="يرجى إدخال أرقام صحيحة")
+    
+    return render_template("add_supplier.html")
+
+@app.route('/edit-supplier/<int:supplier_id>', methods=['GET', 'POST'])
+@require_roles('admin', 'pharmacist')
+def edit_supplier(supplier_id):
+    conn = database.connect()
+    
+    if request.method == 'POST':
+        try:
+            company_name = request.form.get('company_name', '').strip()
+            drug_name = request.form.get('drug_name', '').strip()
+            batch_number = request.form.get('batch_number', '').strip()
+            supply_date = request.form.get('supply_date', '').strip()
+            expiry_date = request.form.get('expiry_date', '').strip()
+            price = request.form.get('price', '').strip()
+            quantity = request.form.get('quantity', '').strip()
+            
+            if not all([company_name, drug_name, batch_number, supply_date, expiry_date, price, quantity]):
+                return render_template("edit_supplier.html", error="جميع الحقول مطلوبة")
+            
+            conn.execute("""
+                UPDATE suppliers 
+                SET company_name=?, drug_name=?, batch_number=?, supply_date=?, expiry_date=?, price=?, quantity=?
+                WHERE id=?
+            """, (company_name, drug_name, batch_number, supply_date, expiry_date, float(price), int(quantity), supplier_id))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('suppliers'))
+        except ValueError:
+            conn.close()
+            return render_template("edit_supplier.html", error="يرجى إدخال أرقام صحيحة")
+    
+    supplier = conn.execute("SELECT * FROM suppliers WHERE id=?", (supplier_id,)).fetchone()
+    conn.close()
+    
+    if not supplier:
+        return redirect(url_for('suppliers'))
+    
+    return render_template("edit_supplier.html", supplier=supplier)
+
+@app.route('/delete-supplier/<int:supplier_id>')
+@require_roles('admin')
+def delete_supplier(supplier_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    conn = database.connect()
+    conn.execute("DELETE FROM suppliers WHERE id=?", (supplier_id,))
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('suppliers'))
 
 # =========================
 # ERROR HANDLERS
@@ -517,7 +568,6 @@ def page_not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return render_template('500.html'), 500
-
 
 # =========================
 # RUN APP

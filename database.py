@@ -1,83 +1,74 @@
 import sqlite3
-import hashlib
 
+DATABASE = 'pharmacy.db'
 
 def connect():
-    conn = sqlite3.connect("pharmacy.db")
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
-
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
 def init_db():
     conn = connect()
+    cursor = conn.cursor()
 
-    # ============================
-    # USERS TABLE
-    # ============================
-    conn.execute("""
+    # جدول المستخدمين
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id          INTEGER  PRIMARY KEY AUTOINCREMENT,
-            username    TEXT     NOT NULL UNIQUE,
-            password    TEXT     NOT NULL,
-            full_name   TEXT     NOT NULL DEFAULT '',
-            role        TEXT     NOT NULL DEFAULT 'pharmacist',
-            email       TEXT,
-            phone       TEXT,
-            is_active   INTEGER  NOT NULL DEFAULT 1,
-            created_at  DATETIME DEFAULT (datetime('now','localtime')),
-            updated_at  DATETIME DEFAULT (datetime('now','localtime'))
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            role TEXT NOT NULL,
+            is_active INTEGER DEFAULT 1,
+            full_name TEXT,
+            email TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # ============================
-    # MEDICINES TABLE
-    # ============================
-    conn.execute("""
+    # جدول الأدوية
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS medicines (
-            id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            name          TEXT    NOT NULL,
-            price         REAL    NOT NULL,
-            quantity      INTEGER NOT NULL,
-            pharmacy_type TEXT    NOT NULL
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            price REAL DEFAULT 0,
+            quantity INTEGER DEFAULT 0,
+            pharmacy_type TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # ============================
-    # DOCTOR ORDERS TABLE
-    # ============================
-    conn.execute("""
+    # جدول طلبات الأطباء
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS doctor_orders (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            patient_name    TEXT    NOT NULL,
-            patient_id      TEXT    NOT NULL,
-            department      TEXT    NOT NULL,
-            medicine_name   TEXT    NOT NULL,
-            dose            TEXT    NOT NULL,
-            notes           TEXT,
-            status          TEXT    DEFAULT 'Pending',
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_name TEXT NOT NULL,
+            patient_id TEXT NOT NULL,
+            department TEXT NOT NULL,
+            medicine_name TEXT NOT NULL,
+            dose TEXT NOT NULL,
+            notes TEXT,
+            pharmacy_type TEXT,
+            status TEXT DEFAULT 'Pending',
             pharmacist_name TEXT,
-            dispense_time   TEXT,
-            pharmacy_type   TEXT,
-            created_at      TEXT    DEFAULT (datetime('now', 'localtime'))
+            dispense_time TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
 
-    # ============================
-    # DEFAULT ADMIN USER
-    # ============================
-    existing = conn.execute(
-        "SELECT * FROM users WHERE username='admin'"
-    ).fetchone()
-
-    if not existing:
-        conn.execute("""
-            INSERT INTO users (username, password, full_name, role, is_active)
-            VALUES (?, ?, ?, ?, 1)
-        """, ('admin', hash_password('admin1234'), 'System Administrator', 'admin'))
+    # جدول الموردين - جديد
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS suppliers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            company_name TEXT NOT NULL,
+            drug_name TEXT NOT NULL,
+            batch_number TEXT NOT NULL,
+            supply_date TEXT NOT NULL,
+            expiry_date TEXT NOT NULL,
+            price REAL NOT NULL,
+            quantity INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
 
     conn.commit()
     conn.close()
