@@ -34,6 +34,25 @@ app.register_blueprint(users_bp)
 # =========================
 # CONTEXT PROCESSORS (للـ Templates)
 # =========================
+# =========================
+# PERMISSION CHECKER
+# =========================
+def check_permission(allowed_roles):
+    """تحقق من صلاحيات المستخدم"""
+    if 'role' not in session or session.get('role') not in allowed_roles:
+        return False
+    return True
+
+def require_roles(*roles):
+    """Decorator للحماية"""
+    def decorator(f):
+        def decorated_function(*args, **kwargs):
+            if not check_permission(roles):
+                return render_template('unauthorized.html'), 403
+            return f(*args, **kwargs)
+        decorated_function.__name__ = f.__name__
+        return decorated_function
+    return decorated_function
 @app.context_processor
 def inject_user():
     """Make user data available in all templates"""
