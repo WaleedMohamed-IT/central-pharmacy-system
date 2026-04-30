@@ -18,6 +18,7 @@
             --accent-color: #0d6efd;
             --success-color: #198754;
             --danger-color: #dc3545;
+            --gold-color: #D4AF37;
         }
 
         * {
@@ -26,7 +27,7 @@
 
         body {
             background-color: #f0f4f8;
-            padding-top: 130px;
+            padding-top: 200px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -39,43 +40,64 @@
         /* ==================== HEADER WITH LOGOS ==================== */
         .header-logos {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            padding: 15px 0;
-            border-bottom: 2px solid #D4AF37;
+            padding: 30px 20px;
+            border-bottom: 3px solid var(--gold-color);
             display: flex;
             justify-content: space-around;
             align-items: center;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 40px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1040;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .logo-section {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
             animation: float 2.5s ease-in-out infinite;
+            flex: 0 1 auto;
         }
 
-        .logo-section img {
-            height: 70px;
-            width: auto;
-            object-fit: contain;
+        .logo-icon {
+            font-size: 90px;
+            color: var(--gold-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .logo-text {
-            color: #D4AF37;
-            font-weight: 700;
-            font-size: 14px;
-            font-family: 'Traditional Arabic', Arial, sans-serif;
-            letter-spacing: 0.5px;
+            color: var(--gold-color);
+            font-weight: 900;
+            font-size: 18px;
+            font-family: 'Traditional Arabic', 'Arabic Typesetting', Arial, sans-serif;
+            letter-spacing: 1.5px;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            min-width: 180px;
         }
 
         .logo-center {
-            flex: 0 0 auto;
+            flex: 0 1 auto;
+        }
+
+        .logo-center .logo-icon {
+            font-size: 85px;
+            color: #E67E22;
+        }
+
+        .logo-center .logo-text {
+            color: #E67E22;
+            min-width: 150px;
         }
 
         @keyframes float {
             0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-4px); }
+            50% { transform: translateY(-6px); }
         }
 
         /* ==================== NAVBAR STYLING ==================== */
@@ -84,6 +106,11 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
             border-bottom: 3px solid var(--accent-color);
             padding: 0.8rem 0;
+            margin-top: 150px;
+            position: fixed;
+            top: 150px;
+            width: 100%;
+            z-index: 1030;
         }
 
         .navbar-brand {
@@ -284,7 +311,32 @@
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 768px) {
             body {
-                padding-top: 180px;
+                padding-top: 280px;
+            }
+
+            .navbar {
+                margin-top: 220px;
+            }
+
+            .header-logos {
+                padding: 20px 10px;
+                gap: 20px;
+                flex-direction: column;
+            }
+
+            .logo-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .logo-icon {
+                font-size: 70px;
+            }
+
+            .logo-text {
+                font-size: 16px;
+                text-align: center;
+                min-width: auto;
             }
 
             .navbar-brand {
@@ -302,19 +354,6 @@
             .user-menu {
                 margin-top: 0.5rem;
             }
-
-            .header-logos {
-                padding: 10px 5px;
-                gap: 10px;
-            }
-
-            .logo-text {
-                font-size: 12px;
-            }
-
-            .logo-section img {
-                height: 50px;
-            }
         }
     </style>
 
@@ -326,24 +365,31 @@
     <div class="header-logos">
         <!-- اليمين: النسر + جمهورية مصر -->
         <div class="logo-section">
-            <img src="{{ url_for('static', filename='images/eagle.png') }}" alt="النسر" title="جمهورية مصر العربية">
+            <div class="logo-icon">
+                <i class="fas fa-eagle"></i>
+            </div>
             <span class="logo-text">جمهورية مصر العربية</span>
         </div>
 
         <!-- الوسط: رؤية مصر 2030 -->
         <div class="logo-section logo-center">
-            <img src="{{ url_for('static', filename='images/vision2030.png') }}" alt="رؤية مصر 2030" title="رؤية مصر 2030" style="height: 60px;">
+            <div class="logo-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <span class="logo-text">رؤية مصر 2030</span>
         </div>
 
         <!-- اليسار: وزارة الصحة -->
         <div class="logo-section">
-            <img src="{{ url_for('static', filename='images/health_ministry.png') }}" alt="وزارة الصحة" title="وزارة الصحة والسكان">
+            <div class="logo-icon">
+                <i class="fas fa-hospital"></i>
+            </div>
             <span class="logo-text">وزارة الصحة والسكان</span>
         </div>
     </div>
 
     <!-- ==================== NAVBAR ==================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="top: 50px;">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
                 <i class="fas fa-pills"></i> نظام الصيدلية
