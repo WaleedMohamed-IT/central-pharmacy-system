@@ -26,7 +26,7 @@
 
         body {
             background-color: #f0f4f8;
-            padding-top: 70px;
+            padding-top: 130px;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -34,6 +34,48 @@
 
         main {
             flex: 1;
+        }
+
+        /* ==================== HEADER WITH LOGOS ==================== */
+        .header-logos {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 15px 0;
+            border-bottom: 2px solid #D4AF37;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: float 2.5s ease-in-out infinite;
+        }
+
+        .logo-section img {
+            height: 70px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            color: #D4AF37;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: 'Traditional Arabic', Arial, sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .logo-center {
+            flex: 0 0 auto;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
         }
 
         /* ==================== NAVBAR STYLING ==================== */
@@ -242,7 +284,7 @@
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 768px) {
             body {
-                padding-top: 60px;
+                padding-top: 180px;
             }
 
             .navbar-brand {
@@ -260,6 +302,19 @@
             .user-menu {
                 margin-top: 0.5rem;
             }
+
+            .header-logos {
+                padding: 10px 5px;
+                gap: 10px;
+            }
+
+            .logo-text {
+                font-size: 12px;
+            }
+
+            .logo-section img {
+                height: 50px;
+            }
         }
     </style>
 
@@ -267,8 +322,28 @@
 </head>
 <body>
 
+    <!-- ==================== HEADER WITH LOGOS ==================== -->
+    <div class="header-logos">
+        <!-- اليمين: النسر + جمهورية مصر -->
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='images/eagle.png') }}" alt="النسر" title="جمهورية مصر العربية">
+            <span class="logo-text">جمهورية مصر العربية</span>
+        </div>
+
+        <!-- الوسط: رؤية مصر 2030 -->
+        <div class="logo-section logo-center">
+            <img src="{{ url_for('static', filename='images/vision2030.png') }}" alt="رؤية مصر 2030" title="رؤية مصر 2030" style="height: 60px;">
+        </div>
+
+        <!-- اليسار: وزارة الصحة -->
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='images/health_ministry.png') }}" alt="وزارة الصحة" title="وزارة الصحة والسكان">
+            <span class="logo-text">وزارة الصحة والسكان</span>
+        </div>
+    </div>
+
     <!-- ==================== NAVBAR ==================== -->
-    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="top: 50px;">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">
                 <i class="fas fa-pills"></i> نظام الصيدلية
@@ -338,15 +413,7 @@
                             </a></li>
                         </ul>
                     </li>
-<!-- Suppliers Dropdown (Admin & Pharmacist) -->
-{% if session.get('role') in ['admin', 'pharmacist'] %}
-<li class="nav-item">
-    <a class="nav-link {% if request.endpoint == 'suppliers' %}active{% endif %}"
-       href="{{ url_for('suppliers') }}">
-        <i class="fas fa-truck"></i> الموردين
-    </a>
-</li>
-{% endif %}
+
                     <!-- Users Management (Admin Only) -->
                     {% if session.get('role') == 'admin' %}
                     <li class="nav-item">
@@ -421,7 +488,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <p class="mb-0">
-                        <strong>نظام إدارة الصيدلية</strong> ©2026 - Eng:Waleed
+                        <strong>نظام إدارة الصيدلية</strong> © 2024
                     </p>
                     <small>جميع الحقوق محفوظة</small>
                 </div>
@@ -448,62 +515,7 @@
         updateTime();
         setInterval(updateTime, 1000);
     </script>
-<!-- Notification System -->
-<script>
-let lastOrderCount = 0;
 
-// اطلب إذن الإشعارات
-if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-}
-
-// تحقق من طلبات جديدة كل 5 ثواني
-setInterval(async function() {
-    // فقط للصيدلي
-    if (!document.querySelector('[class*="pharmacist"]')) {
-        try {
-            const response = await fetch('/check-new-orders');
-            const data = await response.json();
-            
-            console.log('الطلبات المعلقة:', data.count);
-            
-            if (data.count > lastOrderCount) {
-                console.log('🔔 طلب جديد!');
-                
-                // صوت
-                const beep = () => {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-                    
-                    oscillator.frequency.value = 800;
-                    oscillator.type = 'sine';
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                    
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.5);
-                };
-                beep();
-                
-                // إشعار
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('🔔 طلب دواء جديد!', {
-                        body: 'وصل طلب صرف دواء جديد ينتظر موافقتك',
-                        tag: 'order-' + Date.now()
-                    });
-                }
-                
-                lastOrderCount = data.count;
-            }
-        } catch (error) {
-            console.log('خطأ:', error);
-        }
-    }
-}, 5000);
-</script>
-
-{% block extra_js %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
