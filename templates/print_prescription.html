@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}صرف الأدوية - نظام الصيدلية{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">الرئيسية</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('pharmacy_orders') }}">طلبات الصيدلية</a></li>
+        <li class="breadcrumb-item active">صرف الأدوية</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-prescription-bottle-alt"></i> صرف الأدوية
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <!-- معلومات الطلب -->
+                    <div class="alert alert-info" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> معلومات الطلب
+                        </h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>رقم الطلب:</strong> {{ order['id'] }}</p>
+                                <p><strong>الدواء:</strong> {{ order['medicine_name'] }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>الكمية:</strong> وحدة</p>
+                                <p><strong>الصيدلي:</strong> {{ order['pharmacist_name'] }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نموذج الصرف -->
+                    <form method="POST" action="{{ url_for('dispense_medicine', order_id=order['id']) }}" class="needs-validation">
+                        
+                        <!-- حقل اسم الممرضة -->
+                        <div class="form-group mb-3">
+                            <label for="nurse_name" class="form-label">
+                                <i class="fas fa-user-nurse"></i> اسم الممرضة المستلمة:
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control form-control-lg" 
+                                id="nurse_name" 
+                                name="nurse_name" 
+                                placeholder="أدخل اسم الممرضة بالكامل"
+                                required
+                                autocomplete="off">
+                            <small class="form-text text-muted">
+                                <i class="fas fa-asterisk text-danger"></i> حقل مطلوب
+                            </small>
+                        </div>
+
+                        <!-- حقل الملاحظات -->
+                        <div class="form-group mb-3">
+                            <label for="notes" class="form-label">
+                                <i class="fas fa-sticky-note"></i> ملاحظات (اختياري):
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="notes" 
+                                name="notes" 
+                                rows="3" 
+                                placeholder="أضف أي ملاحظات إضافية..."></textarea>
+                        </div>
+
+                        <!-- أزرار الإجراءات -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-success btn-lg flex-grow-1">
+                                <i class="fas fa-check-circle"></i> تأكيد الصرف
+                            </button>
+                            <a href="{{ url_for('pharmacy_orders') }}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times-circle"></i> إلغاء
+                            </a>
+                        </div>
+                    </form>
+
+                    <!-- تنبيه هام -->
+                    <div class="alert alert-warning mt-4" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-exclamation-triangle"></i> تنبيه مهم
+                        </h6>
+                        <ul class="mb-0">
+                            <li>تأكد من اسم الممرضة المستلمة للأدوية</li>
+                            <li>سيتم طباعة التقرير بعد تأكيد الصرف</li>
+                            <li>يجب التوقيع على التقرير من قبل الصيدلي والممرضة</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+        margin-top: 20px;
+    }
+
+    .form-control, .form-control-lg {
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1.1rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-lg:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .alert-info {
+        background-color: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 8px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #1a1a2e;
+        margin-bottom: 0.5rem;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
